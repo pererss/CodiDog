@@ -1,0 +1,233 @@
+/* Общие настройки для хакеров */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Courier New', Courier, monospace; /* Настоящий кодерский шрифт */
+}
+
+body {
+    background-color: #0b0c10; /* Угольный темный фон */
+    color: #c5c6c7; /* Светло-серый текст, чтобы глаза не уставали */
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* Сайдбар */
+.sidebar {
+    width: 260px;
+    background-color: #1f2833; /* Чуть светлее основного фона */
+    border-right: 2px solid #45a29e; /* Линия-разделитель цвета кибер-неона */
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+}
+
+.logo-area {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-bottom: 30px;
+    border-bottom: 1px solid #45a29e;
+}
+
+.dog-icon {
+    font-size: 24px;
+}
+
+.logo-area h2 {
+    color: #66fcf1; /* Яркий неоновый голубой */
+    font-size: 22px;
+    letter-spacing: 1px;
+}
+
+.menu {
+    margin-top: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    flex-grow: 1;
+}
+
+.menu-item {
+    color: #c5c6c7;
+    text-decoration: none;
+    padding: 10px 15px;
+    border-radius: 4px;
+    transition: 0.2s;
+}
+
+.menu-item:hover, .menu-item.active {
+    background-color: #45a29e;
+    color: #0b0c10;
+    font-weight: bold;
+}
+
+.sidebar-footer {
+    font-size: 12px;
+    color: #66fcf1;
+    opacity: 0.6;
+}
+
+/* Основной экран */
+.main-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    background-color: #0b0c10;
+}
+
+/* Верхняя панель */
+.top-bar {
+    height: 70px;
+    border-bottom: 1px solid #1f2833;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 40px;
+}
+
+.search-box input {
+    background-color: #1f2833;
+    border: 1px solid #45a29e;
+    padding: 8px 15px;
+    color: #fff;
+    border-radius: 4px;
+    width: 300px;
+}
+
+.github-btn {
+    background-color: #24292e;
+    color: #fff;
+    border: 1px solid #444;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: bold;
+}
+
+.github-btn:hover {
+    background-color: #2f363d;
+}
+
+.gh-icon {
+    width: 20px;
+    filter: invert(1); /* Делаем иконку гитхаба белой */
+}
+
+/* Дашборд и карточки */
+.dashboard {
+    padding: 40px;
+    overflow-y: auto;
+    flex-grow: 1;
+}
+
+.welcome-zone h1 {
+    color: #fff;
+    margin-bottom: 10px;
+}
+
+.welcome-zone p {
+    color: #45a29e;
+    margin-bottom: 30px;
+}
+
+.projects-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 25px;
+}
+
+.project-card {
+    background-color: #1f2833;
+    border: 1px solid #1f2833;
+    border-radius: 8px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 180px;
+    transition: 0.3s;
+}
+
+.project-card:hover {
+    border-color: #66fcf1;
+    transform: translateY(-3px);
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.card-header h3 {
+    color: #66fcf1;
+}
+
+.status {
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 20px;
+    font-weight: bold;
+}
+
+.status-progress {
+    background-color: rgba(255, 193, 7, 0.2);
+    color: #ffc107;
+}
+
+.status-done {
+    background-color: rgba(40, 167, 69, 0.2);
+    color: #28a745;
+}
+
+.card-desc {
+    font-size: 14px;
+    line-height: 1.4;
+    flex-grow: 1;
+    color: #c5c6c7;
+}
+
+.card-footer {
+    margin-top: 15px;
+    display: flex;
+    gap: 10px;
+}
+
+.tag {
+    font-size: 11px;
+    background-color: #0b0c10;
+    padding: 4px 8px;
+    border-radius: 4px;
+    color: #45a29e;
+}
+
+/* Карточка добавления нового */
+.add-project-card {
+    border: 2px dashed #45a29e;
+    background-color: transparent;
+    cursor: pointer;
+    justify-content: center;
+    align-items: center;
+}
+
+.add-project-card:hover {
+    background-color: rgba(102, 252, 241, 0.05);
+}
+
+.add-inner {
+    text-align: center;
+    color: #45a29e;
+}
+
+.plus-icon {
+    font-size: 40px;
+    display: block;
+    margin-bottom: 5px;
+}
