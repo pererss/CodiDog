@@ -1,23 +1,25 @@
 document.addEventListener("DOMContentLoaded", () => {
     
-    // --- STATE / ХРАНИЛИЩЕ СОСТОЯНИЯ ---
+    // --- СОСТОЯНИЕ (STATE) ---
     let activeProjectId = null;
+    let isResizing = false;
+    let autoSaveIntervalId = null;
 
-    // Инициализация структуры профиля
+    // ПЕРВИЧНАЯ ИНИЦИАЛИЗАЦИЯ КЭША БРАУЗЕРА
     if (!localStorage.getItem("codidog_profile")) {
-        localStorage.setItem("codidog_profile", JSON.stringify({
-            name: "ROOT_USER",
-            role: "System Architect",
-            avatar: "🖥️"
+        localStorage.setItem("codidog_profile", JSON.stringify({ name: "DEV_USER", role: "Software Engineer", avatar: "🖥️" }));
+    }
+    if (!localStorage.getItem("codidog_settings")) {
+        localStorage.setItem("codidog_settings", JSON.stringify({
+            fontSize: 13, wordWrap: "on", lineNumbers: "on", minimap: "hide", tabSize: 4, density: "comfortable", autosaveTime: "60000", logging: "active", defaultPriority: "MEDIUM"
         }));
     }
 
-    // --- DOM ЭЛЕМЕНТЫ ---
+    // --- DOM СВЯЗИ ---
     const sidebar = document.getElementById("sidebar");
     const toggleSidebarBtn = document.getElementById("toggle-sidebar");
     const menuItems = document.querySelectorAll(".menu-item");
     const tabs = document.querySelectorAll(".tab-content");
-    const menuEditorTrigger = document.getElementById("menu-editor-trigger");
     
     const modal = document.getElementById("project-modal");
     const openModalBtn = document.getElementById("open-modal-btn");
@@ -27,41 +29,42 @@ document.addEventListener("DOMContentLoaded", () => {
     const projectsGrid = document.getElementById("projects-grid");
     const searchInput = document.getElementById("search-projects");
     const projectCountEl = document.getElementById("project-count");
-    
+
+    // Панель спецификации проекта
+    const editProjectForm = document.getElementById("edit-project-form");
+    const detTitle = document.getElementById("det-title");
+    const detDesc = document.getElementById("det-desc");
+    const detStack = document.getElementById("det-stack");
+    const detPlatform = document.getElementById("det-platform");
+    const detPriority = document.getElementById("det-priority");
+    const detStatus = document.getElementById("det-status");
+    const detNotes = document.getElementById("det-notes");
+    const detOpenEditorBtn = document.getElementById("det-open-editor-btn");
+    const deleteProjectBtn = document.getElementById("delete-project-btn");
+
+    // IDE Слайдер и файлы
+    const leftPane = document.getElementById("editor-left-pane");
+    const resizer = document.getElementById("editor-resizer");
     const activeProjectTitle = document.getElementById("active-project-title");
     const editorFileList = document.getElementById("editor-file-list");
     const newFileNameInput = document.getElementById("new-file-name");
     const addFileBtn = document.getElementById("add-file-btn");
 
-    // --- 1. СВОРАЧИВАНИЕ САЙДБАРА ---
+    // Kanban элементы
+    const newTaskText = document.getElementById("new-task-text");
+    const addTaskBtn = document.getElementById("add-task-btn");
+
+    // --- СВОРАЧИВАНИЕ МЕНЮ ---
     toggleSidebarBtn.addEventListener("click", () => {
         sidebar.classList.toggle("collapsed");
-        if (window.editor) {
-            setTimeout(() => window.editor.layout(), 210);
-        }
+        triggerEditorLayout();
     });
 
-    // --- 2. СИСТЕМА НАВИГАЦИИ ПО ВКЛАДКАМ ---
+    // --- СИСТЕМА НАВИГАЦИИ ПО ТАБАМ ---
     function switchTab(targetTabId) {
-        menuItems.forEach(item => {
-            if (item.getAttribute("data-tab") === targetTabId) {
-                item.classList.add("active");
-            } else {
-                item.classList.remove("active");
-            }
-        });
-
-        tabs.forEach(tab => {
-            if (tab.id === `tab-${targetTabId}`) {
-                tab.classList.add("active");
-            } else {
-                tab.classList.remove("active");
-            }
-        });
-
-        if (targetTabId === "editor" && window.editor) {
-            setTimeout(() => window.editor.layout(), 10);
-        }
+        menuItems.forEach(i => i.getAttribute("data-tab") === targetTabId ? i.classList.add("active") : i.classList.remove("active"));
+        tabs.forEach(t => t.id === `tab-${targetTabId}` ? t.classList.add("active") : t.classList.remove("active"));
+        if (targetTabId === "editor") triggerEditorLayout();
     }
 
     menuItems.forEach(item => {
@@ -71,286 +74,439 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
-    // --- 3. РЕДАКТОР КОДА MONACO (ВСТРОЕННЫЙ ДВИЖОК) ---
-    let isSettingValue = false; // Флаг предотвращения циклических сохранений
+    document.getElementById("back-to-hub").addEventListener("click", () => switchTab("hub"));
 
+    // --- ИЗМЕНЯЕМЫЙ РАЗМЕР ПАНЕЛЕЙ (DRAGGABLE SPLITTER) ---
+    resizer.addEventListener("mousedown", (e) => {
+        isResizing = true;
+        document.body.style.cursor = "col-resize";
+        document.body.style.userSelect = "none";
+    });
+
+    document.addEventListener("mousemove", (e) => {
+        if (!isResizing) return;
+        let offsetLeft = e.clientX - sidebar.offsetWidth;
+        if (offsetLeft > 100 && offsetLeft < 500) {
+            leftPane.style.width = `${offsetLeft}px`;
+        }
+    });
+
+    document.addEventListener("mouseup", () => {
+        if (isResizing) {
+            isResizing = false;
+            document.body.style.cursor = "default";
+            document.body.style.userSelect = "auto";
+            triggerEditorLayout();
+        }
+    });
+
+    function triggerEditorLayout() {
+        if (window.editor) setTimeout(() => window.editor.layout(), 50);
+    }
+
+    // --- КОРНЕВОЙ ДВИЖОК РЕДАКТОРА MONACO ---
+    let isSettingCodeValue = false;
     require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs' } });
     require(['vs/editor/editor.main'], function () {
+        const config = JSON.parse(localStorage.getItem("codidog_settings"));
         window.editor = monaco.editor.create(document.getElementById('editor-container'), {
-            value: '// Выберите проект в Хабе для начала кодинга.\n',
+            value: '// Выберите или создайте инженерный юнит в Хабе.\n',
             language: 'javascript',
             theme: 'vs-dark',
-            fontSize: 13,
-            lineHeight: 20,
-            automaticLayout: true,
-            minimap: { enabled: false } // Отключили карту кода для экономии места
+            fontSize: parseInt(config.fontSize),
+            wordWrap: config.wordWrap,
+            lineNumbers: config.lineNumbers,
+            tabSize: parseInt(config.tabSize),
+            minimap: { enabled: config.minimap === "show" },
+            automaticLayout: false
         });
 
-        // Отслеживание изменений в редакторе -> Автосохранение
         window.editor.onDidChangeModelContent(() => {
-            if (isSettingValue) return;
-            const currentCode = window.editor.getValue();
-            updateActiveFileCode(currentCode);
+            if (isSettingCodeValue) return;
+            updateActiveFileContent(window.editor.getValue());
         });
     });
 
-    // --- 4. ОПЕРАЦИИ С ПРОЕКТАМИ (LOCALSTORAGE) ---
-    function getProjects() {
-        const data = localStorage.getItem("codidog_projects");
-        return data ? JSON.parse(data) : [];
-    }
+    // --- ИНТЕГРАЦИЯ С ХРАНИЛИЩЕМ (PROJECTS ENGINE) ---
+    function getProjects() { return JSON.parse(localStorage.getItem("codidog_projects")) || []; }
+    function saveProjects(projects) { localStorage.setItem("codidog_projects", JSON.stringify(projects)); renderProjects(); }
 
-    function saveProjects(projects) {
-        localStorage.setItem("codidog_projects", JSON.stringify(projects));
-        renderProjects();
-    }
-
-    function renderProjects(filterText = "") {
+    function renderProjects(filter = "") {
         const projects = getProjects();
         projectsGrid.innerHTML = "";
+        const filtered = projects.filter(p => p.name.toLowerCase().includes(filter.toLowerCase()) || p.stack.toLowerCase().includes(filter.toLowerCase()));
         
-        const filtered = projects.filter(p => {
-            const query = filterText.toLowerCase();
-            return p.name.toLowerCase().includes(query) || p.stack.toLowerCase().includes(query);
-        });
-
         projectCountEl.textContent = filtered.length;
-        updateProfileStats(projects.length);
 
-        if (filtered.length === 0) {
-            projectsGrid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 40px; border: 1px dashed var(--border-color); font-size:13px;">Реестр пуст. Инициализируйте первый проект.</div>`;
+        if (!filtered.length) {
+            projectsGrid.innerHTML = `<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:30px; border:1px dashed var(--border-color); font-size:13px;">Реестр чист. Инициализируйте единицу.</div>`;
             return;
         }
 
         filtered.forEach(p => {
             const card = document.createElement("div");
             card.className = "project-card";
-            const tagsHTML = p.stack ? p.stack.split(",").map(t => `<span class="p-tag">${t.trim()}</span>`).join("") : "";
-            
+            const tags = p.stack ? p.stack.split(",").map(t => `<span class="p-tag">${t.trim()}</span>`).join("") : "";
             card.innerHTML = `
                 <div class="card-top">
-                    <div class="card-meta-line">
-                        <h2>${p.name}</h2>
-                        <span class="badge badge-priority ${p.priority}">${p.priority}</span>
-                    </div>
-                    <p class="card-desc">${p.desc}</p>
-                    <div class="card-tags">${tagsHTML}</div>
+                    <div class="card-meta-line"><h2>${p.name}</h2><span class="badge badge-priority ${p.priority}">${p.priority}</span></div>
+                    <p class="card-desc">${p.desc}</p><div class="card-tags">${tags}</div>
                 </div>
-                <div class="card-footer-line">
-                    <span>Платформа: ${p.platform}</span>
-                    <span>[ ${p.status} ]</span>
-                </div>
+                <div class="card-footer-line"><span>${p.platform}</span><span>[ ${p.status} ]</span></div>
             `;
-            
-            // Вход в проект при клике на карточку
-            card.addEventListener("click", () => {
-                selectProject(p.id);
-            });
-
+            card.addEventListener("click", () => openProjectSpecification(p.id));
             projectsGrid.appendChild(card);
         });
     }
 
-    function selectProject(id) {
+    // --- ЭКРАН 1.5: СТРАНИЦА СПЕЦИФИКАЦИИ И ИЗМЕНЕНИЯ ПРОЕКТА ---
+    function openProjectSpecification(id) {
         activeProjectId = id;
-        const projects = getProjects();
-        const project = projects.find(p => p.id === id);
-        
-        if (project) {
-            activeProjectTitle.textContent = project.name;
-            renderEditorFileList();
-            loadActiveFileIntoEditor();
-            switchTab("editor");
-        }
+        const p = getProjects().find(proj => proj.id === id);
+        if (!p) return;
+
+        detTitle.textContent = p.name.toUpperCase();
+        detDesc.value = p.desc;
+        detStack.value = p.stack;
+        detPlatform.value = p.platform;
+        detPriority.value = p.priority;
+        detStatus.value = p.status;
+        detNotes.value = p.notes || "";
+
+        renderKanban();
+        switchTab("project-detail");
     }
 
-    // --- 5. ФАЙЛОВАЯ СИСТЕМА IDE ВНУТРИ ПРОЕКТА ---
-    function renderEditorFileList() {
-        editorFileList.innerHTML = "";
-        if (!activeProjectId) return;
-
+    editProjectForm.addEventListener("submit", (e) => {
+        e.preventDefault();
         const projects = getProjects();
-        const project = projects.find(p => p.id === activeProjectId);
-        if (!project || !project.files) return;
+        const idx = projects.findIndex(p => p.id === activeProjectId);
+        if (idx === -1) return;
 
-        project.files.forEach((file, index) => {
+        projects[idx].desc = detDesc.value;
+        projects[idx].stack = detStack.value;
+        projects[idx].platform = detPlatform.value;
+        projects[idx].priority = detPriority.value;
+        projects[idx].status = detStatus.value;
+        projects[idx].notes = detNotes.value;
+
+        saveProjects(projects);
+        logSystem("Спецификация проекта успешно обновлена.");
+    });
+
+    deleteProjectBtn.addEventListener("click", () => {
+        if (!confirm("Удалить проект окончательно? Восстановление невозможно.")) return;
+        const projects = getProjects().filter(p => p.id !== activeProjectId);
+        saveProjects(projects);
+        switchTab("hub");
+    });
+
+    detOpenEditorBtn.addEventListener("click", () => {
+        if (!activeProjectId) return;
+        const p = getProjects().find(proj => proj.id === activeProjectId);
+        activeProjectTitle.textContent = p.name;
+        renderFileList();
+        loadActiveFileCode();
+        switchTab("editor");
+    });
+
+    // --- ВНУТРЕННЯЯ IDE СТРУКТУРА ФАЙЛОВ ---
+    function renderFileList() {
+        editorFileList.innerHTML = "";
+        const p = getProjects().find(proj => proj.id === activeProjectId);
+        if (!p || !p.files) return;
+
+        p.files.forEach((file, idx) => {
             const item = document.createElement("div");
-            item.className = `file-item ${index === project.activeFileIndex ? 'active' : ''}`;
+            item.className = `file-item ${idx === p.activeFileIndex ? 'active' : ''}`;
+            item.innerHTML = `<span>📄 ${file.name}</span><button class="delete-file-btn" data-idx="${idx}">×</button>`;
             
-            item.innerHTML = `
-                <span>📄 ${file.name}</span>
-                <button class="delete-file-btn" data-index="${index}">×</button>
-            `;
-
-            // Выбор файла
             item.addEventListener("click", (e) => {
                 if (e.target.classList.contains("delete-file-btn")) return;
-                project.activeFileIndex = index;
-                saveProjects(projects);
-                selectProject(activeProjectId);
+                const projects = getProjects();
+                projects.find(proj => proj.id === activeProjectId).activeFileIndex = idx;
+                localStorage.setItem("codidog_projects", JSON.stringify(projects));
+                renderFileList();
+                loadActiveFileCode();
             });
 
-            // Удаление файла
             item.querySelector(".delete-file-btn").addEventListener("click", (e) => {
                 e.stopPropagation();
-                if (project.files.length === 1) {
-                    alert("В проекте должен оставаться как минимум один файл.");
-                    return;
-                }
-                project.files.splice(index, 1);
-                project.activeFileIndex = 0;
-                saveProjects(projects);
-                selectProject(activeProjectId);
+                const projects = getProjects();
+                const curP = projects.find(proj => proj.id === activeProjectId);
+                if (curP.files.length === 1) return alert("Нельзя удалить единственный файл.");
+                curP.files.splice(idx, 1);
+                curP.activeFileIndex = 0;
+                localStorage.setItem("codidog_projects", JSON.stringify(projects));
+                renderFileList();
+                loadActiveFileCode();
             });
 
             editorFileList.appendChild(item);
         });
     }
 
-    function loadActiveFileIntoEditor() {
+    function loadActiveFileCode() {
         if (!window.editor || !activeProjectId) return;
-        
-        const projects = getProjects();
-        const project = projects.find(p => p.id === activeProjectId);
-        if (!project || !project.files) return;
-
-        const activeFile = project.files[project.activeFileIndex];
-        if (activeFile) {
-            isSettingValue = true;
-            window.editor.setValue(activeFile.content);
-            isSettingValue = false;
+        const p = getProjects().find(proj => proj.id === activeProjectId);
+        if (!p) return;
+        const f = p.files[p.activeFileIndex || 0];
+        if (f) {
+            isSettingCodeValue = true;
+            window.editor.setValue(f.content);
+            isSettingCodeValue = false;
         }
     }
 
-    function updateActiveFileCode(code) {
+    function updateActiveFileContent(text) {
         if (!activeProjectId) return;
         const projects = getProjects();
-        const project = projects.find(p => p.id === activeProjectId);
-        if (project && project.files && project.files[project.activeFileIndex]) {
-            project.files[project.activeFileIndex].content = code;
+        const p = projects.find(proj => proj.id === activeProjectId);
+        if (p && p.files[p.activeFileIndex]) {
+            p.files[p.activeFileIndex].content = text;
             localStorage.setItem("codidog_projects", JSON.stringify(projects));
         }
     }
 
-    // Добавление нового файла в проект
     addFileBtn.addEventListener("click", () => {
         const name = newFileNameInput.value.trim();
-        if (!activeProjectId) {
-            alert("Сначала выберите проект в хабе.");
-            return;
-        }
-        if (!name) return;
-
+        if (!name || !activeProjectId) return;
         const projects = getProjects();
-        const project = projects.find(p => p.id === activeProjectId);
+        const p = projects.find(proj => proj.id === activeProjectId);
+        if (p.files.some(f => f.name.toLowerCase() === name.toLowerCase())) return alert("Файл существует.");
         
-        // Проверка дубликатов नामों
-        if (project.files.some(f => f.name.toLowerCase() === name.toLowerCase())) {
-            alert("Файл с таким именем уже существует.");
-            return;
-        }
-
-        project.files.push({ name: name, content: `// Файл ${name}\n` });
-        project.activeFileIndex = project.files.length - 1;
-        
+        p.files.push({ name: name, content: `// Module ${name}\n` });
+        p.activeFileIndex = p.files.length - 1;
         newFileNameInput.value = "";
-        saveProjects(projects);
-        selectProject(activeProjectId);
+        localStorage.setItem("codidog_projects", JSON.stringify(projects));
+        renderFileList();
+        loadActiveFileCode();
     });
 
-    // --- 6. МОДАЛЬНОЕ ОКНО ДОБАВЛЕНИЯ ПРОЕКТА ---
+    // --- МОДАЛКА: НОВЫЙ ПРОЕКТ ---
     openModalBtn.addEventListener("click", () => modal.classList.add("active"));
-    const closeModal = () => { modal.classList.remove("active"); projectForm.reset(); };
-    closeModalBtn.addEventListener("click", closeModal);
-    cancelFormBtn.addEventListener("click", closeModal);
+    const closeM = () => { modal.classList.remove("active"); projectForm.reset(); };
+    closeModalBtn.addEventListener("click", closeM);
+    cancelFormBtn.addEventListener("click", closeM);
 
     projectForm.addEventListener("submit", (e) => {
         e.preventDefault();
-        
-        const newProject = {
+        const config = JSON.parse(localStorage.getItem("codidog_settings"));
+        const newP = {
             id: Date.now().toString(),
             name: document.getElementById("p-name").value,
             desc: document.getElementById("p-desc").value,
             stack: document.getElementById("p-stack").value,
             platform: document.getElementById("p-platform").value,
-            priority: document.getElementById("p-priority").value,
+            priority: document.getElementById("p-priority").value || config.defaultPriority,
             status: document.getElementById("p-status").value,
-            files: [
-                { name: "main.js", content: "// Среда CodiDog\nconsole.log('Инициализация успешна');\n" }
-            ],
-            activeFileIndex: 0
+            notes: document.getElementById("p-notes").value,
+            files: [{ name: "index.js", content: "// Initialized by CodiDog Hub\nconsole.log('Core Engine Online');\n" }],
+            activeFileIndex: 0,
+            tasks: []
         };
-
-        const currentProjects = getProjects();
-        currentProjects.push(newProject);
-        saveProjects(currentProjects);
-        closeModal();
+        const projs = getProjects();
+        projs.push(newP);
+        saveProjects(projs);
+        closeM();
     });
 
     searchInput.addEventListener("input", (e) => renderProjects(e.target.value));
 
-    // --- 7. УТИЛИТЫ И ИНСТРУМЕНТЫ (ВАЛИДАТОР И ГЕНЕРАТОР) ---
-    // Форматирование JSON
-    document.getElementById("btn-format-json").addEventListener("click", () => {
-        const rawInput = document.getElementById("json-input").value.trim();
-        const outputArea = document.getElementById("json-output");
-        if (!rawInput) return;
+    // --- ИНСТРУМЕНТ ОТ AI: СИСТЕМА КАНБАН (ЗАДАЧИ ВНУТРИ ПРОЕКТА) ---
+    function renderKanban() {
+        const p = getProjects().find(proj => proj.id === activeProjectId);
+        document.getElementById("tasks-todo").innerHTML = "";
+        document.getElementById("tasks-progress").innerHTML = "";
+        document.getElementById("tasks-done").innerHTML = "";
+        if (!p || !p.tasks) return;
 
+        p.tasks.forEach((t) => {
+            const card = document.createElement("div");
+            card.className = "task-item";
+            let actions = "";
+            if (t.status === "todo") actions = `<button class="task-btn" onclick="moveTask('${t.id}', 'progress')">В работу →</button>`;
+            if (t.status === "progress") actions = `<button class="task-btn" onclick="moveTask('${t.id}', 'done')">Готово ✓</button>`;
+            if (t.status === "done") actions = `<span style="color:var(--text-muted)">Завершено</span>`;
+
+            card.innerHTML = `<div>${t.text}</div><div class="task-actions">${actions}<button class="task-btn" style="color:#ff5555" onclick="deleteTask('${t.id}')">×</button></div>`;
+            document.getElementById(`tasks-${t.status}`).appendChild(card);
+        });
+    }
+
+    addTaskBtn.addEventListener("click", () => {
+        const text = newTaskText.value.trim();
+        if (!text) return;
+        const projects = getProjects();
+        const p = projects.find(proj => proj.id === activeProjectId);
+        if (!p.tasks) p.tasks = [];
+        p.tasks.push({ id: Date.now().toString(), text: text, status: "todo" });
+        localStorage.setItem("codidog_projects", JSON.stringify(projects));
+        newTaskText.value = "";
+        renderKanban();
+    });
+
+    window.moveTask = function(taskId, newStatus) {
+        const projects = getProjects();
+        const p = projects.find(proj => proj.id === activeProjectId);
+        const task = p.tasks.find(t => t.id === taskId);
+        if (task) task.status = newStatus;
+        localStorage.setItem("codidog_projects", JSON.stringify(projects));
+        renderKanban();
+    };
+
+    window.deleteTask = function(taskId) {
+        const projects = getProjects();
+        const p = projects.find(proj => proj.id === activeProjectId);
+        p.tasks = p.tasks.filter(t => t.id !== taskId);
+        localStorage.setItem("codidog_projects", JSON.stringify(projects));
+        renderKanban();
+    };
+
+    // --- ПАК ПРОФЕССИОНАЛЬНЫХ ИНСТРУМЕНТОВ РАЗРАБОТЧИКА ---
+    // JSON
+    document.getElementById("btn-format-json").addEventListener("click", () => {
+        const areaIn = document.getElementById("json-input");
+        const areaOut = document.getElementById("json-output");
         try {
-            const parsed = JSON.parse(rawInput);
-            outputArea.value = JSON.stringify(parsed, null, 4);
-            outputArea.style.borderColor = "var(--border-color)";
-        } catch (err) {
-            outputArea.value = `СИНТАКСИЧЕСКАЯ ОШИБКА JSON:\n${err.message}`;
-            outputArea.style.borderColor = "#ff3333";
+            areaOut.value = JSON.stringify(JSON.parse(areaIn.value.trim()), null, 4);
+            areaOut.style.borderColor = "var(--border-color)";
+        } catch (e) {
+            areaOut.value = `Синтаксический сбой:\n${e.message}`;
+            areaOut.style.borderColor = "#ff4444";
         }
     });
 
-    // Генератор UUID v4
+    // Base64 & URL Codecs
+    const cIn = document.getElementById("codec-input");
+    const cOut = document.getElementById("codec-output");
+    document.getElementById("btn-b64-enc").addEventListener("click", () => cOut.value = btoa(unescape(encodeURIComponent(cIn.value))));
+    document.getElementById("btn-b64-dec").addEventListener("click", () => { try { cOut.value = decodeURIComponent(escape(atob(cIn.value))); } catch { cOut.value = "Ошибка декодирования!"; }});
+    document.getElementById("btn-url-enc").addEventListener("click", () => cOut.value = encodeURIComponent(cIn.value));
+    document.getElementById("btn-url-dec").addEventListener("click", () => cOut.value = decodeURIComponent(cIn.value));
+
+    // UUID
     document.getElementById("btn-gen-uuid").addEventListener("click", () => {
-        const uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-            const r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-            return v.toString(16);
+        document.getElementById("uuid-output").value = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+            const r = Math.random() * 16 | 0; return (c == 'x' ? r : (r & 0x3 | 0x8)).toString(16);
         });
-        document.getElementById("uuid-output").value = uuid;
     });
 
-    // --- 8. ЛОГИКА УПРАВЛЕНИЯ ЛОКАЛЬНЫМ ПРОФИЛЕМ ---
-    const profileForm = document.getElementById("profile-form");
-    
-    function loadProfileData() {
-        const profile = JSON.parse(localStorage.getItem("codidog_profile"));
+    // JWT Decoder
+    document.getElementById("btn-decode-jwt").addEventListener("click", () => {
+        const token = document.getElementById("jwt-input").value.trim();
+        const jwtOut = document.getElementById("jwt-output");
+        try {
+            const parts = token.split('.');
+            if(parts.length !== 3) throw new Error("Невалидный формат токена");
+            jwtOut.value = JSON.stringify(JSON.parse(decodeURIComponent(escape(atob(parts[1])))), null, 4);
+        } catch(e) {
+            jwtOut.value = `Ошибка чтения структуры JWT токена.`;
+        }
+    });
+
+    // --- КОНФИГУРАТОР НАСТРОЕК (10 ПАРАМЕТРОВ НА ЛЕТУ) ---
+    function syncSettingsUI() {
+        const c = JSON.parse(localStorage.getItem("codidog_settings"));
+        document.getElementById("sett-font-size").value = c.fontSize;
+        document.getElementById("sett-word-wrap").value = c.wordWrap;
+        document.getElementById("sett-line-numbers").value = c.lineNumbers;
+        document.getElementById("sett-minimap").value = c.minimap;
+        document.getElementById("sett-tab-size").value = c.tabSize;
+        document.getElementById("sett-density").value = c.density;
+        document.getElementById("sett-autosave-time").value = c.autosaveTime;
+        document.getElementById("sett-logging").value = c.logging;
+        document.getElementById("sett-default-priority").value = c.defaultPriority;
+
+        // Плотность верстки
+        document.body.className = c.density;
         
-        // Рендеринг на интерфейс
-        document.getElementById("prof-display-avatar").textContent = profile.avatar;
-        document.getElementById("prof-display-name").textContent = profile.name;
-        document.getElementById("prof-display-role").textContent = profile.role;
-        
-        // Заполнение полей формы ввода
-        document.getElementById("input-profile-name").value = profile.name;
-        document.getElementById("input-profile-role").value = profile.role;
-        document.getElementById("input-profile-avatar").value = profile.avatar;
+        // Переинициализация таймера автосохранения
+        setupAutoSaveTimer(parseInt(c.autosaveTime));
     }
 
-    function updateProfileStats(count) {
-        const totalEl = document.getElementById("stat-total");
-        if (totalEl) totalEl.textContent = count;
+    function readAndSaveSettings() {
+        const newC = {
+            fontSize: document.getElementById("sett-font-size").value,
+            wordWrap: document.getElementById("sett-word-wrap").value,
+            lineNumbers: document.getElementById("sett-line-numbers").value,
+            minimap: document.getElementById("sett-minimap").value,
+            tabSize: document.getElementById("sett-tab-size").value,
+            density: document.getElementById("sett-density").value,
+            autosaveTime: document.getElementById("sett-autosave-time").value,
+            logging: document.getElementById("sett-logging").value,
+            defaultPriority: document.getElementById("sett-default-priority").value
+        };
+        localStorage.setItem("codidog_settings", JSON.stringify(newC));
+        syncSettingsUI();
+
+        // Передача параметров внутрь Monaco Editor
+        if (window.editor) {
+            window.editor.updateOptions({
+                fontSize: parseInt(newC.fontSize),
+                wordWrap: newC.wordWrap,
+                lineNumbers: newC.lineNumbers,
+                tabSize: parseInt(newC.tabSize),
+                minimap: { enabled: newC.minimap === "show" }
+            });
+        }
+        logSystem("Настройки ядра изменены и применены.");
+    }
+
+    const settingsInputs = ["sett-font-size", "sett-word-wrap", "sett-line-numbers", "sett-minimap", "sett-tab-size", "sett-density", "sett-autosave-time", "sett-logging", "sett-default-priority"];
+    settingsInputs.forEach(id => document.getElementById(id).addEventListener("change", readAndSaveSettings));
+
+    document.getElementById("btn-clear-storage").addEventListener("click", () => {
+        if(confirm("Полностью стереть локальную базу данных?")) {
+            localStorage.clear();
+            window.location.reload();
+        }
+    });
+
+    // --- ФОНОВОЕ АВТОСОХРАНЕНИЕ ПО ХРОНОМЕТРАЖУ ---
+    function setupAutoSaveTimer(ms) {
+        if(autoSaveIntervalId) clearInterval(autoSaveIntervalId);
+        autoSaveIntervalId = setInterval(() => {
+            if(activeProjectId && window.editor) {
+                updateActiveFileContent(window.editor.getValue());
+            }
+            const footerStatus = document.getElementById("sys-status");
+            footerStatus.textContent = "[AUTOSAVE: OK]";
+            setTimeout(() => footerStatus.textContent = "SYS: ACTIVE", 2500);
+            logSystem("Фоновое ежеминутное автосохранение выполнено.");
+        }, ms);
+    }
+
+    // --- ПРОФИЛЬ И СИСТЕМНОЕ ЛОГИРОВАНИЕ ---
+    const profileForm = document.getElementById("profile-form");
+    function loadProfile() {
+        const p = JSON.parse(localStorage.getItem("codidog_profile"));
+        document.getElementById("prof-display-avatar").textContent = p.avatar;
+        document.getElementById("prof-display-name").textContent = p.name;
+        document.getElementById("prof-display-role").textContent = p.role;
+        document.getElementById("input-profile-name").value = p.name;
+        document.getElementById("input-profile-role").value = p.role;
+        document.getElementById("input-profile-avatar").value = p.avatar;
     }
 
     profileForm.addEventListener("submit", (e) => {
         e.preventDefault();
-        
-        const updatedProfile = {
+        localStorage.setItem("codidog_profile", JSON.stringify({
             name: document.getElementById("input-profile-name").value,
             role: document.getElementById("input-profile-role").value,
             avatar: document.getElementById("input-profile-avatar").value
-        };
-
-        localStorage.setItem("codidog_profile", JSON.stringify(updatedProfile));
-        loadProfileData();
+        }));
+        loadProfile();
+        logSystem("Профиль обновлен.");
     });
 
-    // ПЕРВИЧНЫЙ СИНХРОННЫЙ ЗАПУСК
+    function logSystem(msg) {
+        const c = JSON.parse(localStorage.getItem("codidog_settings"));
+        if(c && c.logging === "active") console.log(`[CODIDOG_SYS]: ${msg}`);
+    }
+
+    // ПЕРВЫЙ ЗАПУСК
     renderProjects();
-    loadProfileData();
+    loadProfile();
+    syncSettingsUI();
 });
