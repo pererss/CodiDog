@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodiDog Hub</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- БОКОВАЯ ПАНЕЛЬ (САЙДБАР) -->
+    <aside class="sidebar">
+        <div class="logo-area">
+            <span class="dog-icon">🐕‍🦺</span>
+            <h2>CodiDog</h2>
+        </div>
+        <nav class="menu">
+            <a href="#" class="menu-item active">📁 Мои Проекты</a>
+            <a href="#" class="menu-item">📝 Редактор Кода</a>
+            <a href="#" class="menu-item">⚙️ Настройки стиля</a>
+        </nav>
+        <div class="sidebar-footer">
+            <p>v0.1.0 // Dev Mode</p>
+        </div>
+    </aside>
+
+    <!-- ОСНОВНОЙ КОНТЕНТ -->
+    <main class="main-content">
+        <!-- ВЕРХНЯЯ ПАНЕЛЬ -->
+        <header class="top-bar">
+            <div class="search-box">
+                <input type="text" placeholder="Поиск проекта по тегам...">
+            </div>
+            <button class="github-btn">
+                <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" alt="GH" class="gh-icon">
+                Войти через GitHub
+            </button>
+        </header>
+
+        <!-- ПАНЕЛЬ С КАРТОЧКАМИ -->
+        <section class="dashboard">
+            <div class="welcome-zone">
+                <h1>Блокнот проектов</h1>
+                <p>Добро пожаловать в хаб. Здесь живут твои репозитории и заметки.</p>
+            </div>
+
+            <!-- СЕТКА С КАРТОЧКАМИ -->
+            <div class="projects-grid">
+                
+                <!-- Карточка 1 -->
+                <div class="project-card">
+                    <div class="card-header">
+                        <h3>Vibe-Browser</h3>
+                        <span class="status status-progress">В процессе</span>
+                    </div>
+                    <p class="card-desc">Полнофункциональный десктопный браузер на Electron с богатым набором встроенных утилит.</p>
+                    <div class="card-footer">
+                        <span class="tag">#electron</span>
+                        <span class="tag">#javascript</span>
+                    </div>
+                </div>
+
+                <!-- Карточка 2 -->
+                <div class="project-card">
+                    <div class="card-header">
+                        <h3>Telegram-AI-Bot</h3>
+                        <span class="status status-done">Сделано</span>
+                    </div>
+                    <p class="card-desc">Умный бот для друга, работающий на бесплатном хостинге Render 24/7 без засыпания.</p>
+                    <div class="card-footer">
+                        <span class="tag">#node-js</span>
+                        <span class="tag">#api</span>
+                    </div>
+                </div>
+
+                <!-- Кнопка добавления нового -->
+                <div class="project-card add-project-card">
+                    <div class="add-inner">
+                        <span class="plus-icon">+</span>
+                        <p>Описать новый проект</p>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+    </main>
+
+</body>
+</html>
