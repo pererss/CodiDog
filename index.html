@@ -22,7 +22,7 @@
             <a href="#" class="menu-item active" data-tab="hub" title="Хаб проектов">
                 <span class="icon">📁</span><span class="text">Хаб проектов</span>
             </a>
-            <a href="#" class="menu-item" data-tab="editor" title="Редактор кода">
+            <a href="#" class="menu-item" data-tab="editor" title="Редактор кода" id="menu-editor-trigger">
                 <span class="icon">📝</span><span class="text">Редактор кода</span>
             </a>
             <a href="#" class="menu-item" data-tab="tools" title="Инструменты">
@@ -33,7 +33,7 @@
             </a>
         </nav>
         <div class="sidebar-footer">
-            <span class="text">SYS_STATUS: OK</span>
+            <span class="text" id="sys-status">SYS: ACTIVE</span>
         </div>
     </aside>
 
@@ -45,61 +45,84 @@
                     <h1>ХАБ ПРОЕКТОВ</h1>
                     <p class="subtitle">Локальный реестр инженерных решений и архитектуры</p>
                 </div>
-                <button class="btn btn-primary" id="open-modal-btn">+ Зафиксировать проект</button>
+                <button class="btn btn-primary" id="open-modal-btn">+ Инициализировать проект</button>
             </header>
 
             <div class="hub-control-bar">
-                <input type="text" id="search-projects" placeholder="Фильтр по тегам, стеку или названию...">
-                <div class="counter">Всего разработок: <span id="project-count">0</span></div>
+                <input type="text" id="search-projects" placeholder="Быстрый поиск по стеку или названию...">
+                <div class="counter">Всего в реестре: <span id="project-count">0</span></div>
             </div>
 
-            <div class="projects-grid" id="projects-grid">
-                </div>
+            <div class="projects-grid" id="projects-grid"></div>
         </section>
 
-        <section id="tab-editor" class="tab-content font-mono">
-            <div id="editor-container"></div>
+        <section id="tab-editor" class="tab-content">
+            <div class="editor-workspace">
+                <div class="editor-sidebar">
+                    <div class="workspace-title">АКТИВНЫЙ ПРОЕКТ</div>
+                    <div class="active-project-name" id="active-project-title">Не выбран</div>
+                    
+                    <div class="workspace-title" style="margin-top: 15px;">ФАЙЛОВАЯ СТРУКТУРА</div>
+                    <div class="file-list" id="editor-file-list">
+                        </div>
+                    
+                    <div class="add-file-zone">
+                        <input type="text" id="new-file-name" placeholder="filename.js">
+                        <button class="btn btn-primary" id="add-file-btn">+</button>
+                    </div>
+
+                    <div class="editor-guide-zone">
+                        <div class="workspace-title">ГОРЯЧИЕ КЛАВИШИ</div>
+                        <ul class="guide-list">
+                            <li><kbd>Ctrl + F</kbd> <span>Поиск в коде</span></li>
+                            <li><kbd>Ctrl + H</kbd> <span>Быстрая замена</span></li>
+                            <li><kbd>Ctrl + Space</kbd> <span>Интеллект-подсказка</span></li>
+                            <li><kbd>Ctrl + /</kbd> <span>Комментирование</span></li>
+                            <li><kbd>Alt + ↑ / ↓</kbd> <span>Перенос строки</span></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="editor-main-area">
+                    <div id="editor-container"></div>
+                </div>
+            </div>
         </section>
 
         <section id="tab-tools" class="tab-content">
             <header class="section-header">
                 <div>
                     <h1>ИНСТРУМЕНТАРИЙ</h1>
-                    <p class="subtitle">Быстрые утилиты и шпаргалки для ускорения деплоя</p>
+                    <p class="subtitle">Автономные локальные утилиты без отправки данных на серверы</p>
                 </div>
             </header>
             
             <div class="tools-layout">
                 <div class="tool-card">
-                    <h3>💡 Шпаргалка по Git (Частые команды)</h3>
-                    <pre><code>
-git commit --amend -m "Новое описание" # Изменить последний коммит
-git reset --hard HEAD~1                # Откатить последний коммит со стиранием
-git checkout -b название-ветки         # Создать ветку и перейти
-git remote prune origin                # Очистить удаленные хвосты веток
-                    </code></pre>
-                </div>
-
-                <div class="tool-card">
-                    <h3>🛡️ Генератор конфига .gitignore</h3>
-                    <p>Базовые исключения для сред разработки:</p>
-                    <pre><code>node_modules/
-.env
-.DS_Store
-dist/
-build/
-.idea/
-.vscode/</code></pre>
-                </div>
-
-                <div class="tool-card">
-                    <h3>🔄 Быстрый текстовый конвертер (Base64)</h3>
-                    <textarea id="tool-input" placeholder="Введите строку для кодирования..."></textarea>
-                    <div style="margin-top: 10px; display: flex; gap: 10px;">
-                        <button class="btn btn-secondary" id="btn-encode">Encode</button>
-                        <button class="btn btn-secondary" id="btn-decode">Decode</button>
+                    <div class="tool-card-header">
+                        <h3>📦 JSON Formatter & Validator</h3>
+                        <span class="tool-badge">Валидатор</span>
                     </div>
-                    <textarea id="tool-output" readonly placeholder="Результат..." style="margin-top: 10px; height: 60px;"></textarea>
+                    <p class="tool-desc">Выравнивает структуру JSON, убирает лишние пробелы или подсвечивает ошибки синтаксиса.</p>
+                    <div class="tool-split">
+                        <textarea id="json-input" placeholder="Вставьте сырой JSON сюда..."></textarea>
+                        <textarea id="json-output" readonly placeholder="Валидный форматированный результат появится здесь..."></textarea>
+                    </div>
+                    <div style="margin-top: 15px;">
+                        <button class="btn btn-primary" id="btn-format-json">Форматировать JSON</button>
+                    </div>
+                </div>
+
+                <div class="tool-card">
+                    <div class="tool-card-header">
+                        <h3>🔑 Автономный генератор UUID v4</h3>
+                        <span class="tool-badge">Генерация</span>
+                    </div>
+                    <p class="tool-desc">Быстрое создание уникальных идентификаторов для баз данных и сущностей.</p>
+                    <div class="uuid-zone">
+                        <input type="text" id="uuid-output" readonly placeholder="Нажмите сгенерировать">
+                        <button class="btn btn-primary" id="btn-gen-uuid">Сгенерировать</button>
+                    </div>
                 </div>
             </div>
         </section>
@@ -108,24 +131,43 @@ build/
             <header class="section-header">
                 <div>
                     <h1>ПРОФИЛЬ РАЗРАБОТЧИКА</h1>
-                    <p class="subtitle">Статистика активности и текущие лимиты окружения</p>
+                    <p class="subtitle">Локальные настройки среды и данные окружения</p>
                 </div>
             </header>
 
             <div class="profile-container">
-                <div class="profile-card">
-                    <div class="profile-meta">
-                        <div class="profile-avatar">🖥️</div>
-                        <div>
-                            <h2>ROOT_USER</h2>
-                            <p>Локальный терминал: 127.0.0.1</p>
+                <div class="profile-layout">
+                    <div class="profile-display-card">
+                        <div class="profile-meta">
+                            <div class="profile-avatar" id="prof-display-avatar">🖥️</div>
+                            <div>
+                                <h2 id="prof-display-name">ROOT_USER</h2>
+                                <p id="prof-display-role">System Architect</p>
+                            </div>
+                        </div>
+                        <div class="stats-grid">
+                            <div class="stat-item"><span class="stat-val" id="stat-total">0</span><span class="stat-lbl">Проектов в хабе</span></div>
+                            <div class="stat-item"><span class="stat-val">Local</span><span class="stat-lbl">Режим БД</span></div>
                         </div>
                     </div>
-                    <hr class="divider">
-                    <div class="stats-grid">
-                        <div class="stat-item"><span class="stat-val" id="stat-total">0</span><span class="stat-lbl">Интегрировано проектов</span></div>
-                        <div class="stat-item"><span class="stat-val">100%</span><span class="stat-lbl">Автономия кода</span></div>
-                        <div class="stat-item"><span class="stat-val">Offline</span><span class="stat-lbl">Режим синхронизации</span></div>
+
+                    <div class="profile-edit-card">
+                        <h3>Редактировать параметры профиля</h3>
+                        <form id="profile-form">
+                            <div class="form-group">
+                                <label>Имя / Никнейм разработчика</label>
+                                <input type="text" id="input-profile-name" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Специализация / Роль</label>
+                                <input type="text" id="input-profile-role" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Иконка / Эмодзи аватара</label>
+                                <input type="text" id="input-profile-avatar" required style="width: 60px; text-align: center;">
+                            </div>
+                            <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -135,22 +177,22 @@ build/
     <div class="modal" id="project-modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>СПЕЦИФИКАЦИЯ НОВОГО ПРОЕКТА</h2>
+                <h2>ИНИЦИАЛИЗАЦИЯ НОВОЙ ИНЖЕНЕРНОЙ ЕДИНИЦЫ</h2>
                 <button class="close-modal" id="close-modal-btn">×</button>
             </div>
             <form id="project-form">
                 <div class="form-group">
                     <label>Название проекта *</label>
-                    <input type="text" id="p-name" required placeholder="Например: Vibe-Browser">
+                    <input type="text" id="p-name" required placeholder="Например: Core-API-Service">
                 </div>
                 <div class="form-group">
-                    <label>Краткое описание *</label>
-                    <textarea id="p-desc" required placeholder="Суть проекта, какие задачи решает..."></textarea>
+                    <label>Краткое описание назначения *</label>
+                    <textarea id="p-desc" required placeholder="Какие задачи решает архитектура решения..."></textarea>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
                         <label>Технологический стек</label>
-                        <input type="text" id="p-stack" placeholder="Node.js, Electron, Python...">
+                        <input type="text" id="p-stack" placeholder="Node.js, Go, PostgreSQL...">
                     </div>
                     <div class="form-group">
                         <label>Целевая платформа</label>
@@ -165,7 +207,7 @@ build/
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Приоритет разработки</label>
+                        <label>Приоритет деплоя</label>
                         <select id="p-priority">
                             <option value="LOW">LOW</option>
                             <option value="MEDIUM" selected>MEDIUM</option>
@@ -173,7 +215,7 @@ build/
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>Статус</label>
+                        <label>Текущий статус</label>
                         <select id="p-status">
                             <option value="IN_PROGRESS">В разработке</option>
                             <option value="DONE">Завершен</option>
@@ -182,16 +224,12 @@ build/
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>Ссылка на GitHub репозиторий</label>
-                    <input type="url" id="p-github" placeholder="https://github.com/user/repo">
-                </div>
-                <div class="form-group">
-                    <label>Инженерные заметки и архитектурные цели</label>
-                    <textarea id="p-notes" placeholder="Опиши структуру папок, какие API планируешь использовать, критические узлы..."></textarea>
+                    <label>Дополнительные инженерные заметки</label>
+                    <textarea id="p-notes" placeholder="Первичный план архитектуры, эндпоинты, важные модули..."></textarea>
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="btn btn-secondary" id="cancel-form-btn">Отмена</button>
-                    <button type="submit" class="btn btn-primary">Записать в хаб</button>
+                    <button type="submit" class="btn btn-primary">Записать в реестр</button>
                 </div>
             </form>
         </div>
