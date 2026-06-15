@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CodiDog Core Hub</title>
+    <title>CodiDog Core Workspace</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.min.js"></script>
 </head>
@@ -31,6 +31,9 @@
             <a href="#" class="menu-item" data-tab="profile" title="Профиль">
                 <span class="icon">👤</span><span class="text">Профиль</span>
             </a>
+            <a href="#" class="menu-item" data-tab="settings" title="Настройки">
+                <span class="icon">⚙️</span><span class="text">Настройки</span>
+            </a>
         </nav>
         <div class="sidebar-footer">
             <span class="text" id="sys-status">SYS: ACTIVE</span>
@@ -45,43 +48,124 @@
                     <h1>ХАБ ПРОЕКТОВ</h1>
                     <p class="subtitle">Локальный реестр инженерных решений и архитектуры</p>
                 </div>
-                <button class="btn btn-primary" id="open-modal-btn">+ Инициализировать проект</button>
+                <button class="btn btn-primary" id="open-modal-btn">+ Создать проект</button>
             </header>
 
             <div class="hub-control-bar">
-                <input type="text" id="search-projects" placeholder="Быстрый поиск по стеку или названию...">
-                <div class="counter">Всего в реестре: <span id="project-count">0</span></div>
+                <input type="text" id="search-projects" placeholder="Поиск проекта...">
+                <div class="counter">Всего: <span id="project-count">0</span></div>
             </div>
 
             <div class="projects-grid" id="projects-grid"></div>
         </section>
 
+        <section id="tab-project-detail" class="tab-content">
+            <header class="section-header">
+                <div>
+                    <span class="back-link" id="back-to-hub">← Вернуться в хаб</span>
+                    <h1 id="det-title" style="margin-top: 10px;">НАЗВАНИЕ ПРОЕКТА</h1>
+                    <p class="subtitle">Управление спецификацией и вехами разработки</p>
+                </div>
+                <button class="btn btn-primary" id="det-open-editor-btn">Открыть в редакторе кода →</button>
+            </header>
+
+            <div class="project-detail-layout">
+                <div class="detail-meta-panel">
+                    <h3>Параметры манифеста</h3>
+                    <form id="edit-project-form">
+                        <div class="form-group">
+                            <label>Описание</label>
+                            <textarea id="det-desc" rows="3"></textarea>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Технологический стек</label>
+                                <input type="text" id="det-stack">
+                            </div>
+                            <div class="form-group">
+                                <label>Платформа</label>
+                                <input type="text" id="det-platform">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Приоритет</label>
+                                <select id="det-priority">
+                                    <option value="LOW">LOW</option>
+                                    <option value="MEDIUM">MEDIUM</option>
+                                    <option value="CRITICAL">CRITICAL</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Статус</label>
+                                <select id="det-status">
+                                    <option value="IN_PROGRESS">В разработке</option>
+                                    <option value="DONE">Завершен</option>
+                                    <option value="ARCHIVE">Архив</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Архитектурные заметки</label>
+                            <textarea id="det-notes" rows="4"></textarea>
+                        </div>
+                        <div style="display:flex; justify-content: space-between; align-items:center;">
+                            <button type="submit" class="btn btn-primary">Сохранить манифест</button>
+                            <button type="button" class="btn" id="delete-project-btn" style="color: #ff4444; border-color: #441111;">Удалить проект</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="detail-kanban-panel">
+                    <h3>Локальные задачи проекта (Task Board)</h3>
+                    <div class="kanban-input-zone">
+                        <input type="text" id="new-task-text" placeholder="Что нужно сделать?">
+                        <button class="btn btn-secondary" id="add-task-btn">+</button>
+                    </div>
+                    <div class="kanban-columns">
+                        <div class="kanban-column" data-status="todo">
+                            <h4>ПЛАН</h4>
+                            <div class="task-list" id="tasks-todo"></div>
+                        </div>
+                        <div class="kanban-column" data-status="progress">
+                            <h4>В ПРОЦЕССЕ</h4>
+                            <div class="task-list" id="tasks-progress"></div>
+                        </div>
+                        <div class="kanban-column" data-status="done">
+                            <h4>ГОТОВО</h4>
+                            <div class="task-list" id="tasks-done"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <section id="tab-editor" class="tab-content">
             <div class="editor-workspace">
-                <div class="editor-sidebar">
-                    <div class="workspace-title">АКТИВНЫЙ ПРОЕКТ</div>
+                <div class="editor-sidebar" id="editor-left-pane">
+                    <div class="workspace-title">ПРОЕКТ В РАБОТЕ</div>
                     <div class="active-project-name" id="active-project-title">Не выбран</div>
                     
-                    <div class="workspace-title" style="margin-top: 15px;">ФАЙЛОВАЯ СТРУКТУРА</div>
-                    <div class="file-list" id="editor-file-list">
-                        </div>
+                    <div class="workspace-title" style="margin-top: 15px;">ФАЙЛЫ</div>
+                    <div class="file-list" id="editor-file-list"></div>
                     
                     <div class="add-file-zone">
-                        <input type="text" id="new-file-name" placeholder="filename.js">
+                        <input type="text" id="new-file-name" placeholder="app.js">
                         <button class="btn btn-primary" id="add-file-btn">+</button>
                     </div>
 
                     <div class="editor-guide-zone">
                         <div class="workspace-title">ГОРЯЧИЕ КЛАВИШИ</div>
                         <ul class="guide-list">
-                            <li><kbd>Ctrl + F</kbd> <span>Поиск в коде</span></li>
-                            <li><kbd>Ctrl + H</kbd> <span>Быстрая замена</span></li>
-                            <li><kbd>Ctrl + Space</kbd> <span>Интеллект-подсказка</span></li>
-                            <li><kbd>Ctrl + /</kbd> <span>Комментирование</span></li>
-                            <li><kbd>Alt + ↑ / ↓</kbd> <span>Перенос строки</span></li>
+                            <li><kbd>Ctrl + F</kbd> Поиск</li>
+                            <li><kbd>Ctrl + H</kbd> Замена</li>
+                            <li><kbd>Ctrl + Space</kbd> Подсказки</li>
+                            <li><kbd>Ctrl + /</kbd> Коммент</li>
                         </ul>
                     </div>
                 </div>
+
+                <div class="resizer" id="editor-resizer"></div>
 
                 <div class="editor-main-area">
                     <div id="editor-container"></div>
@@ -92,36 +176,44 @@
         <section id="tab-tools" class="tab-content">
             <header class="section-header">
                 <div>
-                    <h1>ИНСТРУМЕНТАРИЙ</h1>
-                    <p class="subtitle">Автономные локальные утилиты без отправки данных на серверы</p>
+                    <h1>ИНСТРУМЕНТАРИЙ РАЗРАБОТЧИКА</h1>
+                    <p class="subtitle">Быстрые локальные утилиты преобразования данных</p>
                 </div>
             </header>
             
             <div class="tools-layout">
                 <div class="tool-card">
-                    <div class="tool-card-header">
-                        <h3>📦 JSON Formatter & Validator</h3>
-                        <span class="tool-badge">Валидатор</span>
-                    </div>
-                    <p class="tool-desc">Выравнивает структуру JSON, убирает лишние пробелы или подсвечивает ошибки синтаксиса.</p>
+                    <h4>📦 JSON Formatter & Validator</h4>
                     <div class="tool-split">
-                        <textarea id="json-input" placeholder="Вставьте сырой JSON сюда..."></textarea>
-                        <textarea id="json-output" readonly placeholder="Валидный форматированный результат появится здесь..."></textarea>
+                        <textarea id="json-input" placeholder="Сырой JSON..."></textarea>
+                        <textarea id="json-output" readonly placeholder="Результат..."></textarea>
                     </div>
-                    <div style="margin-top: 15px;">
-                        <button class="btn btn-primary" id="btn-format-json">Форматировать JSON</button>
-                    </div>
+                    <button class="btn btn-primary style-btn-margin" id="btn-format-json">Форматировать</button>
                 </div>
 
                 <div class="tool-card">
-                    <div class="tool-card-header">
-                        <h3>🔑 Автономный генератор UUID v4</h3>
-                        <span class="tool-badge">Генерация</span>
+                    <h4>🔄 Преобразователи текста (Base64 / URL)</h4>
+                    <textarea id="codec-input" placeholder="Исходный текст..." style="height:70px;"></textarea>
+                    <textarea id="codec-output" readonly placeholder="Результат преобразования..." style="height:70px; margin-top:10px;"></textarea>
+                    <div class="tool-actions-row">
+                        <button class="btn btn-secondary" id="btn-b64-enc">Base64 Enc</button>
+                        <button class="btn btn-secondary" id="btn-b64-dec">Base64 Dec</button>
+                        <button class="btn btn-secondary" id="btn-url-enc">URL Enc</button>
+                        <button class="btn btn-secondary" id="btn-url-dec">URL Dec</button>
                     </div>
-                    <p class="tool-desc">Быстрое создание уникальных идентификаторов для баз данных и сущностей.</p>
-                    <div class="uuid-zone">
-                        <input type="text" id="uuid-output" readonly placeholder="Нажмите сгенерировать">
-                        <button class="btn btn-primary" id="btn-gen-uuid">Сгенерировать</button>
+                </div>
+
+                <div class="tool-grid-2">
+                    <div class="tool-card">
+                        <h4>🔍 JWT Token Decoder</h4>
+                        <input type="text" id="jwt-input" placeholder="Вставьте токен eyJhbGci..." style="width:100%; margin-bottom:10px;">
+                        <textarea id="jwt-output" readonly placeholder="Полезная нагрузка (Payload)..." style="height:100px;"></textarea>
+                        <button class="btn btn-primary style-btn-margin" id="btn-decode-jwt">Декодировать JWT</button>
+                    </div>
+                    <div class="tool-card">
+                        <h4>🔑 UUID v4 Генератор</h4>
+                        <input type="text" id="uuid-output" readonly placeholder="Идентификатор..." style="width:100%; margin-bottom:15px; font-family:monospace;">
+                        <button class="btn btn-primary" id="btn-gen-uuid">Сгенерировать UUID</button>
                     </div>
                 </div>
             </div>
@@ -130,45 +222,101 @@
         <section id="tab-profile" class="tab-content">
             <header class="section-header">
                 <div>
-                    <h1>ПРОФИЛЬ РАЗРАБОТЧИКА</h1>
-                    <p class="subtitle">Локальные настройки среды и данные окружения</p>
+                    <h1>ПРОФИЛЬ</h1>
+                    <p class="subtitle">Локальная идентификация разработчика</p>
                 </div>
             </header>
-
             <div class="profile-container">
                 <div class="profile-layout">
                     <div class="profile-display-card">
                         <div class="profile-meta">
                             <div class="profile-avatar" id="prof-display-avatar">🖥️</div>
-                            <div>
-                                <h2 id="prof-display-name">ROOT_USER</h2>
-                                <p id="prof-display-role">System Architect</p>
-                            </div>
-                        </div>
-                        <div class="stats-grid">
-                            <div class="stat-item"><span class="stat-val" id="stat-total">0</span><span class="stat-lbl">Проектов в хабе</span></div>
-                            <div class="stat-item"><span class="stat-val">Local</span><span class="stat-lbl">Режим БД</span></div>
+                            <h2 id="prof-display-name">DEV_USER</h2>
+                            <p id="prof-display-role">Engineer</p>
                         </div>
                     </div>
-
                     <div class="profile-edit-card">
-                        <h3>Редактировать параметры профиля</h3>
+                        <h3>Настройки профиля</h3>
                         <form id="profile-form">
                             <div class="form-group">
-                                <label>Имя / Никнейм разработчика</label>
+                                <label>Никнейм</label>
                                 <input type="text" id="input-profile-name" required>
                             </div>
                             <div class="form-group">
-                                <label>Специализация / Роль</label>
+                                <label>Роль / Специализация</label>
                                 <input type="text" id="input-profile-role" required>
                             </div>
                             <div class="form-group">
-                                <label>Иконка / Эмодзи аватара</label>
-                                <input type="text" id="input-profile-avatar" required style="width: 60px; text-align: center;">
+                                <label>Эмодзи аватара</label>
+                                <input type="text" id="input-profile-avatar" required style="width:60px; text-align:center;">
                             </div>
-                            <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+                            <button type="submit" class="btn btn-primary">Обновить данные</button>
                         </form>
                     </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="tab-settings" class="tab-content">
+            <header class="section-header">
+                <div>
+                    <h1>НАСТРОЙКИ СРЕДЫ</h1>
+                    <p class="subtitle">Конфигурация ядра редактора и параметров отображения интерфейса</p>
+                </div>
+            </header>
+            <div class="settings-container">
+                <div class="settings-grid-panel">
+                    
+                    <div class="sett-row">
+                        <div class="sett-info"><h5>1. Размер шрифта кода</h5><span>Управление кеглем букв внутри Monaco Editor</span></div>
+                        <input type="number" id="sett-font-size" value="13" min="10" max="24">
+                    </div>
+
+                    <div class="sett-row">
+                        <div class="sett-info"><h5>2. Перенос длинных строк</h5><span>Автоматический перенос строк, выходящих за экран</span></div>
+                        <select id="sett-word-wrap"><option value="on">Включен (on)</option><option value="off">Выключен (off)</option></select>
+                    </div>
+
+                    <div class="sett-row">
+                        <div class="sett-info"><h5>3. Нумерация строк кода</h5><span>Показывать левую шкалу номеров строк</span></div>
+                        <select id="sett-line-numbers"><option value="on">Показывать</option><option value="off">Скрыть</option></select>
+                    </div>
+
+                    <div class="sett-row">
+                        <div class="sett-info"><h5>4. Боковая мини-карта (Minimap)</h5><span>Отображение карты скроллинга кода справа</span></div>
+                        <select id="sett-minimap"><option value="show">Показывать</option><option value="hide">Отключить</option></select>
+                    </div>
+
+                    <div class="sett-row">
+                        <div class="sett-info"><h5>5. Размер знака табуляции</h5><span>Количество пробелов при нажатии на Tab</span></div>
+                        <input type="number" id="sett-tab-size" value="4" min="2" max="8">
+                    </div>
+
+                    <div class="sett-row">
+                        <div class="sett-info"><h5>6. Плотность интерфейса (Density)</h5><span>Размеры отступов в списках и карточках</span></div>
+                        <select id="sett-density"><option value="comfortable">Комфортная</option><option value="compact">Компактная (Сжатая)</option></select>
+                    </div>
+
+                    <div class="sett-row">
+                        <div class="sett-info"><h5>7. Фоновое автосохранение</h5><span>Интервал принудительной записи данных в память</span></div>
+                        <select id="sett-autosave-time"><option value="60000">Каждую минуту</option><option value="30000">Каждые 30 сек</option><option value="300000">Каждые 5 минут</option></select>
+                    </div>
+
+                    <div class="sett-row">
+                        <div class="sett-info"><h5>8. Логирование отладки</h5><span>Вывод внутренних процессов в консоль браузера</span></div>
+                        <select id="sett-logging"><option value="active">Активно</option><option value="silent">Режим тишины</option></select>
+                    </div>
+
+                    <div class="sett-row">
+                        <div class="sett-info"><h5>9. Дефолтный приоритет</h5><span>Значение приоритета для новых сущностей</span></div>
+                        <select id="sett-default-priority"><option value="LOW">LOW</option><option value="MEDIUM" selected>MEDIUM</option><option value="CRITICAL">CRITICAL</option></select>
+                    </div>
+
+                    <div class="sett-row" style="border-bottom:none;">
+                        <div class="sett-info"><h5>10. Сброс кэша приложения</h5><span style="color:#ff4444;">Внимание: Полное удаление всех локальных проектов!</span></div>
+                        <button class="btn" id="btn-clear-storage" style="background-color:#220000; color:#ff5555; border-color:#551111;">Стереть всё</button>
+                    </div>
+
                 </div>
             </div>
         </section>
@@ -177,29 +325,28 @@
     <div class="modal" id="project-modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>ИНИЦИАЛИЗАЦИЯ НОВОЙ ИНЖЕНЕРНОЙ ЕДИНИЦЫ</h2>
+                <h2>ИНИЦИАЛИЗАЦИЯ ИНЖЕНЕРНОГО РЕШЕНИЯ</h2>
                 <button class="close-modal" id="close-modal-btn">×</button>
             </div>
             <form id="project-form">
                 <div class="form-group">
                     <label>Название проекта *</label>
-                    <input type="text" id="p-name" required placeholder="Например: Core-API-Service">
+                    <input type="text" id="p-name" required placeholder="Core-App">
                 </div>
                 <div class="form-group">
-                    <label>Краткое описание назначения *</label>
-                    <textarea id="p-desc" required placeholder="Какие задачи решает архитектура решения..."></textarea>
+                    <label>Краткое описание *</label>
+                    <textarea id="p-desc" required placeholder="Назначение разработки..."></textarea>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
                         <label>Технологический стек</label>
-                        <input type="text" id="p-stack" placeholder="Node.js, Go, PostgreSQL...">
+                        <input type="text" id="p-stack" placeholder="Node.js, JS">
                     </div>
                     <div class="form-group">
                         <label>Целевая платформа</label>
                         <select id="p-platform">
                             <option value="Web App">Web App</option>
                             <option value="Desktop App">Desktop App</option>
-                            <option value="Mobile App">Mobile App</option>
                             <option value="Telegram Bot">Telegram Bot</option>
                             <option value="CLI Tool">CLI Tool</option>
                         </select>
@@ -219,13 +366,12 @@
                         <select id="p-status">
                             <option value="IN_PROGRESS">В разработке</option>
                             <option value="DONE">Завершен</option>
-                            <option value="ARCHIVE">Архив</option>
                         </select>
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>Дополнительные инженерные заметки</label>
-                    <textarea id="p-notes" placeholder="Первичный план архитектуры, эндпоинты, важные модули..."></textarea>
+                    <label>Инженерные заметки</label>
+                    <textarea id="p-notes" placeholder="Архитектурный план..."></textarea>
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="btn btn-secondary" id="cancel-form-btn">Отмена</button>
