@@ -3,100 +3,199 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CodiDog Hub</title>
+    <title>CodiDog Core Hub</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.min.js"></script>
 </head>
 <body>
 
-    <aside class="sidebar">
-        <div class="logo-area">
-            <span class="dog-icon">🐕‍🦺</span>
-            <h2>CodiDog</h2>
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo-group">
+                <span class="logo-icon">🐕</span>
+                <span class="logo-text">CODIDOG_</span>
+            </div>
+            <button class="toggle-sidebar-btn" id="toggle-sidebar">⇹</button>
         </div>
+        
         <nav class="menu">
-            <a href="#" class="menu-item active" data-tab="dashboard">📁 Мои Проекты</a>
-            <a href="#" class="menu-item" data-tab="editor">📝 Редактор Кода</a>
-            <a href="#" class="menu-item" data-tab="settings">⚙️ Настройки стиля</a>
+            <a href="#" class="menu-item active" data-tab="hub" title="Хаб проектов">
+                <span class="icon">📁</span><span class="text">Хаб проектов</span>
+            </a>
+            <a href="#" class="menu-item" data-tab="editor" title="Редактор кода">
+                <span class="icon">📝</span><span class="text">Редактор кода</span>
+            </a>
+            <a href="#" class="menu-item" data-tab="tools" title="Инструменты">
+                <span class="icon">🛠️</span><span class="text">Инструментарий</span>
+            </a>
+            <a href="#" class="menu-item" data-tab="profile" title="Профиль">
+                <span class="icon">👤</span><span class="text">Профиль</span>
+            </a>
         </nav>
         <div class="sidebar-footer">
-            <p>v0.1.0 // Dev Mode</p>
+            <span class="text">SYS_STATUS: OK</span>
         </div>
     </aside>
 
     <main class="main-content">
-        <header class="top-bar">
-            <div class="search-box">
-                <input type="text" placeholder="Поиск проекта по тегам...">
-            </div>
-            <button class="github-btn" id="gh-login">
-                <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" alt="GH" class="gh-icon">
-                Войти через GitHub
-            </button>
-        </header>
-
-        <section id="tab-dashboard" class="tab-content active">
-            <div class="dashboard">
-                <div class="welcome-zone">
-                    <h1>Блокнот проектов</h1>
-                    <p>Добро пожаловать в хаб. Здесь живут твои репозитории и заметки.</p>
+        
+        <section id="tab-hub" class="tab-content active">
+            <header class="section-header">
+                <div>
+                    <h1>ХАБ ПРОЕКТОВ</h1>
+                    <p class="subtitle">Локальный реестр инженерных решений и архитектуры</p>
                 </div>
+                <button class="btn btn-primary" id="open-modal-btn">+ Зафиксировать проект</button>
+            </header>
 
-                <div class="projects-grid">
-                    <div class="project-card">
-                        <div class="card-header">
-                            <h3>Vibe-Browser</h3>
-                            <span class="status status-progress">В процессе</span>
-                        </div>
-                        <p class="card-desc">Полнофункциональный десктопный браузер на Electron с богатым набором встроенных утилит.</p>
-                        <div class="card-footer">
-                            <span class="tag">#electron</span>
-                            <span class="tag">#javascript</span>
-                        </div>
-                    </div>
-
-                    <div class="project-card">
-                        <div class="card-header">
-                            <h3>Telegram-AI-Bot</h3>
-                            <span class="status status-done">Сделано</span>
-                        </div>
-                        <p class="card-desc">Умный бот для друга, работающий на бесплатном хостинге Render 24/7 без засыпания.</p>
-                        <div class="card-footer">
-                            <span class="tag">#node-js</span>
-                            <span class="tag">#api</span>
-                        </div>
-                    </div>
-
-                    <div class="project-card add-project-card" id="add-project-btn">
-                        <div class="add-inner">
-                            <span class="plus-icon">+</span>
-                            <p>Описать новый проект</p>
-                        </div>
-                    </div>
-                </div>
+            <div class="hub-control-bar">
+                <input type="text" id="search-projects" placeholder="Фильтр по тегам, стеку или названию...">
+                <div class="counter">Всего разработок: <span id="project-count">0</span></div>
             </div>
+
+            <div class="projects-grid" id="projects-grid">
+                </div>
         </section>
 
-        <section id="tab-editor" class="tab-content">
-            <div class="editor-header">
-                <h3>⚡ Встроенный Workspace / workspace.js</h3>
-                <span class="editor-lang">Language: JavaScript</span>
-            </div>
+        <section id="tab-editor" class="tab-content font-mono">
             <div id="editor-container"></div>
         </section>
 
-        <section id="tab-settings" class="tab-content">
-            <div class="settings-zone">
-                <h1>Настройки интерфейса</h1>
-                <p>Выбери боевой стиль для хаба:</p>
-                <div class="theme-selector">
-                    <button class="theme-btn active">🐕 CodiDog (Dark Coal)</button>
-                    <button class="theme-btn" onclick="alert('Будет доступно в v0.2!')">🕶️ Hacker Matrix (Green)</button>
-                    <button class="theme-btn" onclick="alert('Будет доступно в v0.2!')">🌌 CyberPunk 2077</button>
+        <section id="tab-tools" class="tab-content">
+            <header class="section-header">
+                <div>
+                    <h1>ИНСТРУМЕНТАРИЙ</h1>
+                    <p class="subtitle">Быстрые утилиты и шпаргалки для ускорения деплоя</p>
+                </div>
+            </header>
+            
+            <div class="tools-layout">
+                <div class="tool-card">
+                    <h3>💡 Шпаргалка по Git (Частые команды)</h3>
+                    <pre><code>
+git commit --amend -m "Новое описание" # Изменить последний коммит
+git reset --hard HEAD~1                # Откатить последний коммит со стиранием
+git checkout -b название-ветки         # Создать ветку и перейти
+git remote prune origin                # Очистить удаленные хвосты веток
+                    </code></pre>
+                </div>
+
+                <div class="tool-card">
+                    <h3>🛡️ Генератор конфига .gitignore</h3>
+                    <p>Базовые исключения для сред разработки:</p>
+                    <pre><code>node_modules/
+.env
+.DS_Store
+dist/
+build/
+.idea/
+.vscode/</code></pre>
+                </div>
+
+                <div class="tool-card">
+                    <h3>🔄 Быстрый текстовый конвертер (Base64)</h3>
+                    <textarea id="tool-input" placeholder="Введите строку для кодирования..."></textarea>
+                    <div style="margin-top: 10px; display: flex; gap: 10px;">
+                        <button class="btn btn-secondary" id="btn-encode">Encode</button>
+                        <button class="btn btn-secondary" id="btn-decode">Decode</button>
+                    </div>
+                    <textarea id="tool-output" readonly placeholder="Результат..." style="margin-top: 10px; height: 60px;"></textarea>
+                </div>
+            </div>
+        </section>
+
+        <section id="tab-profile" class="tab-content">
+            <header class="section-header">
+                <div>
+                    <h1>ПРОФИЛЬ РАЗРАБОТЧИКА</h1>
+                    <p class="subtitle">Статистика активности и текущие лимиты окружения</p>
+                </div>
+            </header>
+
+            <div class="profile-container">
+                <div class="profile-card">
+                    <div class="profile-meta">
+                        <div class="profile-avatar">🖥️</div>
+                        <div>
+                            <h2>ROOT_USER</h2>
+                            <p>Локальный терминал: 127.0.0.1</p>
+                        </div>
+                    </div>
+                    <hr class="divider">
+                    <div class="stats-grid">
+                        <div class="stat-item"><span class="stat-val" id="stat-total">0</span><span class="stat-lbl">Интегрировано проектов</span></div>
+                        <div class="stat-item"><span class="stat-val">100%</span><span class="stat-lbl">Автономия кода</span></div>
+                        <div class="stat-item"><span class="stat-val">Offline</span><span class="stat-lbl">Режим синхронизации</span></div>
+                    </div>
                 </div>
             </div>
         </section>
     </main>
+
+    <div class="modal" id="project-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>СПЕЦИФИКАЦИЯ НОВОГО ПРОЕКТА</h2>
+                <button class="close-modal" id="close-modal-btn">×</button>
+            </div>
+            <form id="project-form">
+                <div class="form-group">
+                    <label>Название проекта *</label>
+                    <input type="text" id="p-name" required placeholder="Например: Vibe-Browser">
+                </div>
+                <div class="form-group">
+                    <label>Краткое описание *</label>
+                    <textarea id="p-desc" required placeholder="Суть проекта, какие задачи решает..."></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Технологический стек</label>
+                        <input type="text" id="p-stack" placeholder="Node.js, Electron, Python...">
+                    </div>
+                    <div class="form-group">
+                        <label>Целевая платформа</label>
+                        <select id="p-platform">
+                            <option value="Web App">Web App</option>
+                            <option value="Desktop App">Desktop App</option>
+                            <option value="Mobile App">Mobile App</option>
+                            <option value="Telegram Bot">Telegram Bot</option>
+                            <option value="CLI Tool">CLI Tool</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Приоритет разработки</label>
+                        <select id="p-priority">
+                            <option value="LOW">LOW</option>
+                            <option value="MEDIUM" selected>MEDIUM</option>
+                            <option value="CRITICAL">CRITICAL</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Статус</label>
+                        <select id="p-status">
+                            <option value="IN_PROGRESS">В разработке</option>
+                            <option value="DONE">Завершен</option>
+                            <option value="ARCHIVE">Архив</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Ссылка на GitHub репозиторий</label>
+                    <input type="url" id="p-github" placeholder="https://github.com/user/repo">
+                </div>
+                <div class="form-group">
+                    <label>Инженерные заметки и архитектурные цели</label>
+                    <textarea id="p-notes" placeholder="Опиши структуру папок, какие API планируешь использовать, критические узлы..."></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" id="cancel-form-btn">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Записать в хаб</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <script src="script.js"></script>
 </body>
